@@ -1,5 +1,5 @@
-import { Whiteboard } from "@/components/whiteboard/whiteboard";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <Whiteboard />;
+  redirect("/boards");
 }

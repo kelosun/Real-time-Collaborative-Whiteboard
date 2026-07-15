@@ -172,8 +172,41 @@ input[type="range"] {
   font-size: 12px;
 }
 
-.board-topbar button {
+.board-topbar button,
+.topbar-link {
   min-height: 36px;
+}
+
+.board-actions {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.topbar-link {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: flex;
+  gap: 8px;
+  padding: 0 12px;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.topbar-link:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.toolbar-extra {
+  display: grid;
+  gap: 10px;
 }
 
 .whiteboard-canvas {
@@ -234,5 +267,17 @@ input[type="range"] {
     flex-direction: column;
     gap: 10px;
     padding: 12px;
+  }
+
+  .board-actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .board-actions button,
+  .topbar-link {
+    justify-content: center;
+    width: 100%;
   }
 }

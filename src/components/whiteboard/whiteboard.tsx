@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   Circle,
   Eraser,
   MousePointer2,
@@ -13,7 +14,8 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-import { PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { PointerEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createId, getShapeBounds, moveShape, normalizeBox } from "./geometry";
 import type { DraftShape, Point, Tool, WhiteboardShape } from "./types";
 import "./whiteboard.css";
@@ -42,11 +44,35 @@ type DragState =
       mode: "move";
       shapeId: string;
       last: Point;
+      beforeMove: WhiteboardShape[];
     }
   | null;
 
-export function Whiteboard() {
+type WhiteboardProps = {
+  boardTitle?: string;
+  description?: string;
+  phaseLabel?: string;
+  initialShapes?: WhiteboardShape[];
+  persistence?: "local" | "remote";
+  saveLabel?: string;
+  backHref?: string;
+  toolbarExtra?: ReactNode;
+  onSave?: (shapes: WhiteboardShape[]) => Promise<void>;
+};
+
+export function Whiteboard({
+  boardTitle = "Untitled board",
+  description = "单人绘图 MVP，后续接入房间与实时协作。",
+  phaseLabel = "Phase 1",
+  initialShapes = [],
+  persistence = "local",
+  saveLabel,
+  backHref,
+  toolbarExtra,
+  onSave,
+}: WhiteboardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const hasLoadedInitialShapes = useRef(false);
   const [tool, setTool] = useState<Tool>("pen");
   const [stroke, setStroke] = useState(colors[0]);
   const [strokeWidth, setStrokeWidth] = useState(5);
@@ -59,6 +85,8 @@ export function Whiteboard() {
   const [savedAt, setSavedAt] = useState<string>("未保存");
 
   useEffect(() => {
+    if (persistence !== "local") return;
+
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
 
@@ -69,16 +97,46 @@ export function Whiteboard() {
     } catch {
       setSavedAt("本地草稿读取失败");
     }
-  }, []);
+    hasLoadedInitialShapes.current = true;
+  }, [persistence]);
 
   useEffect(() => {
+    if (persistence !== "remote") return;
+    setShapes(initialShapes);
+    setHistory([]);
+    setFuture([]);
+    setSelectedId(null);
+    setSavedAt("已加载房间数据");
+    hasLoadedInitialShapes.current = true;
+  }, [initialShapes, persistence]);
+
+  useEffect(() => {
+    if (persistence !== "local") return;
+
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(shapes));
-    setSavedAt(new Intl.DateTimeFormat("zh-CN", {
+    setSavedAt(formatSavedAt());
+  }, [persistence, shapes]);
+
+  useEffect(() => {
+    if (persistence !== "remote" || !onSave || !hasLoadedInitialShapes.current) return;
+
+    setSavedAt("保存中...");
+    const timeoutId = window.setTimeout(() => {
+      onSave(shapes)
+        .then(() => setSavedAt(formatSavedAt()))
+        .catch(() => setSavedAt("保存失败"));
+    }, 550);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [onSave, persistence, shapes]);
+
+  function formatSavedAt() {
+    return new Intl.DateTimeFormat("zh-CN", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-    }).format(new Date()));
-  }, [shapes]);
+    }).format(new Date());
+  }
 
   const selectedShape = useMemo(
     () => shapes.find((shape) => shape.id === selectedId) ?? null,
@@ -122,7 +180,7 @@ export function Whiteboard() {
     if (tool === "select") {
       if (shapeId) {
         setSelectedId(shapeId);
-        setDragState({ mode: "move", shapeId, last: point });
+        setDragState({ mode: "move", shapeId, last: point, beforeMove: shapes });
       } else {
         setSelectedId(null);
       }
@@ -227,7 +285,7 @@ export function Whiteboard() {
     }
 
     if (dragState?.mode === "move") {
-      setHistory((items) => [...items, shapes]);
+      setHistory((items) => [...items, dragState.beforeMove]);
       setFuture([]);
       setDragState(null);
       return;
@@ -291,9 +349,9 @@ export function Whiteboard() {
     <main className="whiteboard-shell">
       <aside className="side-panel" aria-label="白板工具栏">
         <div>
-          <p className="eyebrow">Phase 1</p>
+          <p className="eyebrow">{phaseLabel}</p>
           <h1>在线白板</h1>
-          <p className="subtitle">单人绘图 MVP，后续接入房间与实时协作。</p>
+          <p className="subtitle">{description}</p>
         </div>
 
         <section className="tool-group" aria-label="绘图工具">
@@ -362,20 +420,31 @@ export function Whiteboard() {
 
         <div className="save-status">
           <Save size={16} />
-          <span>本地保存：{savedAt}</span>
+          <span>
+            {saveLabel ?? (persistence === "remote" ? "房间保存" : "本地保存")}：{savedAt}
+          </span>
         </div>
+        {toolbarExtra ? <div className="toolbar-extra">{toolbarExtra}</div> : null}
       </aside>
 
       <section className="board-area" aria-label="白板画布">
         <div className="board-topbar">
           <div>
-            <strong>Untitled board</strong>
+            <strong>{boardTitle}</strong>
             <span>{shapes.length} 个对象</span>
           </div>
-          <button onClick={() => window.location.reload()} type="button">
-            <RotateCcw size={16} />
-            <span>重新载入</span>
-          </button>
+          <div className="board-actions">
+            {backHref ? (
+              <Link className="topbar-link" href={backHref}>
+                <ArrowLeft size={16} />
+                <span>房间列表</span>
+              </Link>
+            ) : null}
+            <button onClick={() => window.location.reload()} type="button">
+              <RotateCcw size={16} />
+              <span>重新载入</span>
+            </button>
+          </div>
         </div>
 
         <svg
