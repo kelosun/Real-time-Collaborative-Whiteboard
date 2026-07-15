@@ -134,16 +134,17 @@ npm install
 docker compose up -d postgres
 ```
 
-配置环境变量：
+配置本地环境变量：
 
 ```bash
 cp .env.example .env
 ```
 
-然后根据你的 PostgreSQL 修改 `.env` 中的连接串：
+本地开发默认连接 Docker PostgreSQL：
 
 ```txt
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/realtime_whiteboard?schema=public"
+DATABASE_URL_UNPOOLED="postgresql://postgres:postgres@localhost:5432/realtime_whiteboard?schema=public"
 ```
 
 生成 Prisma Client：
@@ -196,12 +197,50 @@ npm run db:studio:5555
 
 如果看到 `EADDRINUSE`，说明该端口已经有 Studio 或其他服务在运行，直接打开已有地址，或先停掉占用端口的进程。
 
+## Environment Strategy
+
+本项目区分本地数据库和远程数据库：
+
+```txt
+.env                  本地开发，连接 Docker PostgreSQL
+.env.remote           本地执行远程迁移时使用，连接 Neon/Supabase 等云数据库
+Vercel 环境变量        线上运行时使用，连接云数据库
+```
+
+`.env`、`.env.remote` 都不会被 Git 提交。仓库只提交示例文件：
+
+```txt
+.env.example
+.env.remote.example
+```
+
+日常本地开发：
+
+```bash
+docker compose up -d postgres
+npm run db:migrate
+npm run dev
+```
+
+远程云数据库迁移：
+
+```bash
+cp .env.remote.example .env.remote
+```
+
+把 `.env.remote` 改成云数据库连接串后执行：
+
+```bash
+npm run db:deploy:remote
+```
+
 ## Deploying To Vercel
 
 Vercel 不能访问你本机 Docker 里的 PostgreSQL。部署时需要准备一个云数据库，并在 Vercel 项目中配置环境变量：
 
 ```txt
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@DIRECT_HOST:PORT/DATABASE?schema=public"
 ```
 
 推荐数据库：
@@ -214,10 +253,15 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 第一次连接云数据库后，需要把 migration 应用到云数据库：
 
 ```bash
-npm run db:deploy
+npm run db:deploy:remote
 ```
 
-如果要在本地对云数据库执行这一步，可以临时把 `.env` 中的 `DATABASE_URL` 改成云数据库连接串，然后运行上面的命令。
+如果使用 Neon，建议：
+
+- `DATABASE_URL` 使用 pooled connection，给 Vercel 运行时访问数据库
+- `DATABASE_URL_UNPOOLED` 使用 direct/unpooled connection，给 Prisma migration 使用
+
+如果要在本地对云数据库执行迁移，把 `.env.remote` 中这两个变量改成云数据库连接串，然后运行 `npm run db:deploy:remote`。不要为了远程迁移修改 `.env`，这样可以避免本地开发误连线上数据库。
 
 Vercel 默认构建命令保持：
 

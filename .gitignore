@@ -4,6 +4,8 @@ out
 dist
 coverage
 .env
+.env.production
+.env.remote
 .env.local
 .env.*.local
 npm-debug.log*
