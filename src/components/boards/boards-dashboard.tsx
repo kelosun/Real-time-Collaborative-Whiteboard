@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Plus, RefreshCw } from "lucide-react";
+import { ArrowRight, Database, Loader2, Plus, RefreshCw, Sparkles } from "lucide-react";
 import "./boards.css";
 
 type BoardSummary = {
@@ -72,41 +72,68 @@ export function BoardsDashboard() {
 
   return (
     <main className="boards-shell">
-      <section className="boards-intro">
-        <p className="eyebrow">Phase 2</p>
-        <h1>白板房间</h1>
-        <p>
-          当前阶段加入基础后端和 PostgreSQL 持久化。创建一个房间后，白板内容会通过
-          API 自动保存到数据库。
-        </p>
-      </section>
+      <header className="boards-nav" aria-label="项目标识">
+        <Link className="brand-mark" href="/boards">
+          <span className="brand-symbol">W</span>
+          <span>Realtime Whiteboard</span>
+        </Link>
+        <span className="maker-badge">@kelosun</span>
+      </header>
 
-      <section className="create-board-panel" aria-label="创建白板房间">
-        <form onSubmit={createBoard}>
-          <label>
-            <span>房间名称</span>
-            <input
-              maxLength={80}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="例如：产品评审白板"
-              required
-              value={name}
-            />
-          </label>
-          <label>
-            <span>游客昵称</span>
-            <input
-              maxLength={40}
-              onChange={(event) => setGuestName(event.target.value)}
-              placeholder="例如：Kelo"
-              value={guestName}
-            />
-          </label>
-          <button disabled={isCreating} type="submit">
-            {isCreating ? <Loader2 className="spin" size={18} /> : <Plus size={18} />}
-            <span>{isCreating ? "创建中" : "创建房间"}</span>
-          </button>
-        </form>
+      <section className="boards-hero">
+        <div className="boards-intro">
+          <p className="eyebrow">Phase 2 · Room Persistence</p>
+          <h1>把想法铺成一张在线白板</h1>
+          <p>
+            创建一个房间，进入画布，绘制的图形会通过 API 保存到 PostgreSQL。现在是单人房间版本，下一阶段接入实时协作。
+          </p>
+          <div className="hero-metrics" aria-label="当前项目能力">
+            <span>
+              <strong>{boards.length}</strong>
+              房间
+            </span>
+            <span>
+              <strong>{boards.reduce((total, board) => total + board.shapeCount, 0)}</strong>
+              对象
+            </span>
+            <span>
+              <Database size={16} />
+              PostgreSQL
+            </span>
+          </div>
+        </div>
+
+        <section className="create-board-panel" aria-label="创建白板房间">
+          <div className="panel-heading">
+            <Sparkles size={18} />
+            <h2>新建白板房间</h2>
+          </div>
+          <form onSubmit={createBoard}>
+            <label>
+              <span>房间名称</span>
+              <input
+                maxLength={80}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="例如：产品评审白板"
+                required
+                value={name}
+              />
+            </label>
+            <label>
+              <span>游客昵称</span>
+              <input
+                maxLength={40}
+                onChange={(event) => setGuestName(event.target.value)}
+                placeholder="例如：Kelo"
+                value={guestName}
+              />
+            </label>
+            <button disabled={isCreating} type="submit">
+              {isCreating ? <Loader2 className="spin" size={18} /> : <Plus size={18} />}
+              <span>{isCreating ? "创建中" : "创建房间"}</span>
+            </button>
+          </form>
+        </section>
       </section>
 
       <section className="boards-list-header">
@@ -145,6 +172,8 @@ export function BoardsDashboard() {
           ))
         )}
       </section>
+
+      <footer className="boards-footer">Powered by kelosun</footer>
     </main>
   );
 }
