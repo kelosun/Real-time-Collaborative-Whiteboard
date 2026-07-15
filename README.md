@@ -196,6 +196,35 @@ npm run db:studio:5555
 
 如果看到 `EADDRINUSE`，说明该端口已经有 Studio 或其他服务在运行，直接打开已有地址，或先停掉占用端口的进程。
 
+## Deploying To Vercel
+
+Vercel 不能访问你本机 Docker 里的 PostgreSQL。部署时需要准备一个云数据库，并在 Vercel 项目中配置环境变量：
+
+```txt
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+```
+
+推荐数据库：
+
+- Neon
+- Supabase
+- Railway PostgreSQL
+- Vercel Marketplace 里的 PostgreSQL 服务
+
+第一次连接云数据库后，需要把 migration 应用到云数据库：
+
+```bash
+npm run db:deploy
+```
+
+如果要在本地对云数据库执行这一步，可以临时把 `.env` 中的 `DATABASE_URL` 改成云数据库连接串，然后运行上面的命令。
+
+Vercel 默认构建命令保持：
+
+```bash
+npm run build
+```
+
 停止本地 PostgreSQL 容器：
 
 ```bash
