@@ -2,7 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const databaseUrl =
-  process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/realtime_whiteboard";
+  process.env.DATABASE_URL ??
+  process.env.DATABASE_URL_UNPOOLED ??
+  "postgresql://postgres:postgres@localhost:5432/realtime_whiteboard";
 
 const adapter = new PrismaPg(databaseUrl);
 
