@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serializeBoardDetail, serializeBoardSummary, type WhiteboardRoomRecord } from "@/lib/boards";
 import { prisma } from "@/lib/prisma";
-import { countWhiteboardShapes, parseWhiteboardShapes } from "@/lib/whiteboard-shapes";
+import { parseWhiteboardShapes } from "@/lib/whiteboard-shapes";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +13,7 @@ export async function GET() {
   });
 
   return NextResponse.json({
-    boards: boards.map((board) => ({
-      id: board.id,
-      name: board.name,
-      guestName: board.guestName,
-      shapeCount: countWhiteboardShapes(board.shapes),
-      createdAt: board.createdAt.toISOString(),
-      updatedAt: board.updatedAt.toISOString(),
-    })),
+    boards: (boards as WhiteboardRoomRecord[]).map(serializeBoardSummary),
   });
 }
 
@@ -47,14 +41,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json(
     {
-      board: {
-        id: board.id,
-        name: board.name,
-        guestName: board.guestName,
-        shapes: parseWhiteboardShapes(board.shapes),
-        createdAt: board.createdAt.toISOString(),
-        updatedAt: board.updatedAt.toISOString(),
-      },
+      board: serializeBoardDetail(board as WhiteboardRoomRecord),
     },
     { status: 201 },
   );

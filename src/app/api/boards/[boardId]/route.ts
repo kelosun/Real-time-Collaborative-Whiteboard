@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serializeBoardDetail, type WhiteboardRoomRecord } from "@/lib/boards";
 import { prisma } from "@/lib/prisma";
 import { parseWhiteboardShapes } from "@/lib/whiteboard-shapes";
 
@@ -23,14 +24,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   return NextResponse.json({
-    board: {
-      id: board.id,
-      name: board.name,
-      guestName: board.guestName,
-      shapes: parseWhiteboardShapes(board.shapes),
-      createdAt: board.createdAt.toISOString(),
-      updatedAt: board.updatedAt.toISOString(),
-    },
+    board: serializeBoardDetail(board as WhiteboardRoomRecord),
   });
 }
 
@@ -65,13 +59,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   return NextResponse.json({
-    board: {
-      id: board.id,
-      name: board.name,
-      guestName: board.guestName,
-      shapes: parseWhiteboardShapes(board.shapes),
-      createdAt: board.createdAt.toISOString(),
-      updatedAt: board.updatedAt.toISOString(),
-    },
+    board: serializeBoardDetail(board as WhiteboardRoomRecord),
   });
 }
