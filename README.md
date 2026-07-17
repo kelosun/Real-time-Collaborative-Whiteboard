@@ -144,7 +144,6 @@ cp .env.example .env
 
 ```txt
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/realtime_whiteboard?schema=public"
-DATABASE_URL_UNPOOLED="postgresql://postgres:postgres@localhost:5432/realtime_whiteboard?schema=public"
 ```
 
 生成 Prisma Client：
@@ -199,19 +198,19 @@ npm run db:studio:5555
 
 ## Environment Strategy
 
-本项目区分本地数据库和远程数据库：
+本项目区分本地数据库和服务器数据库：
 
 ```txt
 .env                  本地开发，连接 Docker PostgreSQL
-.env.remote           本地执行远程迁移时使用，连接 Neon/Supabase 等云数据库
-Vercel 环境变量        线上运行时使用，连接云数据库
+.env.server           本地执行服务器迁移时使用，连接你的服务器 PostgreSQL
+Vercel 环境变量        线上运行时使用，连接你的服务器 PostgreSQL
 ```
 
-`.env`、`.env.remote` 都不会被 Git 提交。仓库只提交示例文件：
+`.env`、`.env.server` 都不会被 Git 提交。仓库只提交示例文件：
 
 ```txt
 .env.example
-.env.remote.example
+.env.server.example
 ```
 
 日常本地开发：
@@ -222,46 +221,33 @@ npm run db:migrate
 npm run dev
 ```
 
-远程云数据库迁移：
+服务器数据库迁移：
 
 ```bash
-cp .env.remote.example .env.remote
+cp .env.server.example .env.server
 ```
 
-把 `.env.remote` 改成云数据库连接串后执行：
+把 `.env.server` 改成服务器 PostgreSQL 连接串后执行：
 
 ```bash
-npm run db:deploy:remote
+npm run db:deploy:server
 ```
 
 ## Deploying To Vercel
 
-Vercel 不能访问你本机 Docker 里的 PostgreSQL。部署时需要准备一个云数据库，并在 Vercel 项目中配置环境变量：
+Vercel 不能访问你本机 Docker 里的 PostgreSQL。部署时需要连接你的服务器 PostgreSQL，并在 Vercel 项目中配置环境变量：
 
 ```txt
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
-DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@DIRECT_HOST:PORT/DATABASE?schema=public"
 ```
 
-推荐数据库：
-
-- Neon
-- Supabase
-- Railway PostgreSQL
-- Vercel Marketplace 里的 PostgreSQL 服务
-
-第一次连接云数据库后，需要把 migration 应用到云数据库：
+第一次连接服务器数据库后，需要把 migration 应用到服务器 PostgreSQL：
 
 ```bash
-npm run db:deploy:remote
+npm run db:deploy:server
 ```
 
-如果使用 Neon，建议：
-
-- `DATABASE_URL` 使用 pooled connection，给 Vercel 运行时访问数据库
-- `DATABASE_URL_UNPOOLED` 使用 direct/unpooled connection，给 Prisma migration 使用
-
-如果要在本地对云数据库执行迁移，把 `.env.remote` 中这两个变量改成云数据库连接串，然后运行 `npm run db:deploy:remote`。不要为了远程迁移修改 `.env`，这样可以避免本地开发误连线上数据库。
+如果要在本地对服务器数据库执行迁移，把 `.env.server` 中的 `DATABASE_URL` 改成服务器连接串，然后运行 `npm run db:deploy:server`。不要为了服务器迁移修改 `.env`，这样可以避免本地开发误连生产数据库。
 
 Vercel 默认构建命令保持：
 
